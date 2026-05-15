@@ -1,0 +1,10 @@
+kaggle
+datasets
+kafka-python
+pandas
+pyspark==3.5.0
+langchain
+langchain-community
+langchain-ollama
+chromadb
+sentence-transformers

@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fraud Guard | Intelligence Center</title>
+    <style>
+        :root {
+            --bg-color: #050505;
+            --surface: #111113;
+            --surface-accent: #19191b;
+            --glass: rgba(255, 255, 255, 0.03);
+            --border: rgba(255, 255, 255, 0.08);
+            --text-main: #ffffff;
+            --text-muted: #8e8e93;
+            --accent-blue: #0A84FF;
+            --accent-green: #30D158;
+            --accent-red: #FF453A;
+            --accent-orange: #FF9F0A;
+            --font-stack: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            --font-mono: "SF Mono", "Fira Code", monospace;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            font-family: var(--font-stack);
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden; 
+        }
+
+        /* --- Custom DARK Scrollbar --- */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #2c2c2e; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #3a3a3c; }
+
+        /* --- Header --- */
+        header {
+            height: 64px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 30px;
+            border-bottom: 1px solid var(--border);
+            background: rgba(5, 5, 5, 0.8);
+            backdrop-filter: blur(20px);
+            flex-shrink: 0;
+        }
+
+        .brand { display: flex; align-items: center; gap: 12px; }
+        .brand svg { width: 24px; height: 24px; color: var(--accent-blue); }
+        .brand-name { font-size: 18px; font-weight: 700; letter-spacing: -0.5px; }
+
+        .nav-tabs { display: flex; gap: 4px; background: var(--glass); padding: 4px; border-radius: 10px; }
+        .tab-btn {
+            background: transparent; color: var(--text-muted); border: none;
+            padding: 8px 20px; border-radius: 6px; font-size: 13px; font-weight: 600;
+            cursor: pointer; transition: 0.2s;
+        }
+        .tab-btn.active { background: var(--surface-accent); color: #fff; }
+
+        .system-status { display: flex; align-items: center; gap: 10px; font-size: 12px; font-weight: 600; color: var(--accent-green); }
+        .pulse-dot { width: 8px; height: 8px; background: var(--accent-green); border-radius: 50%; animation: pulse-glow 2s infinite; }
+        @keyframes pulse-glow { 0% { opacity: 1; } 50% { opacity: 0.3; } 100% { opacity: 1; } }
+
+        /* --- Main Layout --- */
+        main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            padding: 30px;
+            gap: 30px;
+            min-height: 0;
+        }
+
+        .dashboard-grid {
+            display: flex;
+            gap: 30px;
+            flex: 1;
+            min-height: 0;
+        }
+
+        .col { display: flex; flex-direction: column; gap: 30px; min-height: 0; }
+        .col-left { width: 300px; flex-shrink: 0; }
+        .col-center { flex: 1; }
+        .col-right { width: 380px; flex-shrink: 0; }
+
+        /* --- Components --- */
+        .card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+            flex: 1;
+        }
+        .card-no-grow { flex: 0 0 auto; }
+        
+        .card-header {
+            padding: 16px 22px;
+            border-bottom: 1px solid var(--border);
+            display: flex; align-items: center; gap: 10px;
+        }
+        .card-header svg { width: 16px; height: 16px; color: var(--text-muted); }
+        .card-title { font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted); }
+        
+        .card-body { padding: 20px; flex: 1; overflow: hidden; display: flex; flex-direction: column; min-height: 0; }
+
+        /* --- Stat Blocks --- */
+        .stat-card {
+            background: var(--surface-accent);
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 15px;
+            border: 1px solid var(--border);
+        }
+        .stat-card:last-child { margin-bottom: 0; }
+        .stat-card .label { font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 6px; display: block;}
+        .stat-card .value { font-size: 28px; font-weight: 800; }
+        .stat-total .value { color: var(--accent-blue); }
+        .stat-blocked .value { color: var(--accent-red); }
+        .stat-cleared .value { color: var(--accent-green); }
+
+        /* --- Pipeline Visualizer --- */
+        .pipeline {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 30px 80px; background: var(--surface-accent); border-radius: 24px;
+            position: relative; flex-shrink: 0; border: 1px solid var(--border);
+        }
+        .pipeline::before {
+            content: ''; position: absolute; top: 50%; left: 100px; right: 100px; height: 1px;
+            background: var(--border); z-index: 0;
+        }
+        .node {
+            width: 54px; height: 54px; border-radius: 14px; background: var(--surface);
+            border: 1px solid var(--border); z-index: 1; display: flex; align-items: center; justify-content: center;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative; color: var(--text-muted);
+        }
+        .node svg { width: 24px; height: 24px; }
+        .node::after {
+            content: attr(data-label); position: absolute; bottom: -24px; 
+            font-size: 10px; font-weight: 700; color: var(--text-muted); white-space: nowrap;
+        }
+        .node.active { border-color: var(--accent-blue); color: var(--accent-blue); box-shadow: 0 0 20px rgba(10, 132, 255, 0.25); transform: translateY(-3px); }
+        .node.active-fraud { border-color: var(--accent-red); color: var(--accent-red); box-shadow: 0 0 20px rgba(255, 69, 58, 0.25); transform: translateY(-3px); }
+
+        /* --- Terminal / Feed --- */
+        .terminal {
+            background: #000; border-radius: 12px; padding: 16px;
+            font-family: var(--font-mono); font-size: 13px; color: #d1d1d6;
+            overflow-y: auto; flex: 1; min-height: 0;
+        }
+        .log-entry { margin-bottom: 8px; display: flex; gap: 10px; border-bottom: 1px solid rgba(255,255,255,0.02); padding-bottom: 6px; }
+        .log-time { color: var(--text-muted); }
+        .tag { font-weight: 700; padding: 2px 6px; border-radius: 4px; font-size: 10px; text-transform: uppercase; }
+        .tag-good { color: var(--accent-green); background: rgba(48, 209, 88, 0.1); }
+        .tag-fraud { color: var(--accent-red); background: rgba(255, 69, 58, 0.1); }
+
+        .feed { overflow-y: auto; flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 12px; }
+        .inv-card {
+            background: var(--surface-accent); border: 1px solid var(--border);
+            border-radius: 14px; padding: 16px; cursor: pointer; transition: 0.2s;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .inv-card:hover { border-color: var(--accent-blue); background: rgba(255,255,255,0.04); }
+        .inv-acc { font-size: 15px; font-weight: 700; }
+        .inv-meta { font-size: 12px; color: var(--text-muted); }
+        .status-pill { font-size: 10px; font-weight: 800; padding: 5px 10px; border-radius: 8px; text-transform: uppercase; }
+        .pill-blocked { background: rgba(255,69,58,0.1); color: var(--accent-red); }
+        .pill-cleared { background: rgba(48, 209, 88, 0.1); color: var(--accent-green); }
+        .pill-notified { background: rgba(10, 132, 255, 0.1); color: var(--accent-blue); }
+        .pill-error { background: rgba(255,159,10,0.1); color: var(--accent-orange); }
+
+        /* --- Service Controls --- */
+        .service-list { display: flex; flex-direction: column; gap: 12px; }
+        .service-item {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 12px 18px; background: var(--surface-accent); border-radius: 14px; border: 1px solid var(--border);
+        }
+        .service-info { display: flex; flex-direction: column; gap: 2px; }
+        .service-name { font-size: 13px; font-weight: 700; }
+        .service-status { font-size: 11px; font-weight: 700; padding-top: 4px; }
+        .status-running { color: var(--accent-green); }
+        .status-stopped { color: var(--text-muted); }
+        .control-btn {
+            padding: 6px 12px; border-radius: 8px; border: none; font-size: 11px; font-weight: 700; cursor: pointer;
+            background: rgba(255,255,255,0.06); color: #fff; transition: 0.2s;
+        }
+        .control-btn:hover { background: rgba(255,255,255,0.12); }
+
+        /* --- Database View --- */
+        .table-wrapper { flex: 1; overflow-y: auto; min-height: 0; }
+        table { width: 100%; border-collapse: collapse; font-size: 14px; }
+        th { text-align: left; padding: 16px 24px; background: var(--surface-accent); color: var(--text-muted); font-size: 11px; font-weight: 700; text-transform: uppercase; position: sticky; top: 0; border-bottom: 1px solid var(--border); }
+        td { padding: 16px 24px; border-bottom: 1px solid var(--border); }
+        .action-link { color: var(--accent-blue); font-weight: 700; cursor: pointer; }
+
+        /* --- Modal --- */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0, 0, 0, 0.85); backdrop-filter: blur(10px);
+            z-index: 1000; display: none; align-items: center; justify-content: center; padding: 20px;
+        }
+        .modal-content {
+            background: var(--surface); border: 1px solid var(--border);
+            width: 100%; max-width: 650px; border-radius: 24px;
+            display: flex; flex-direction: column; max-height: 85vh;
+        }
+        .modal-header { padding: 24px 30px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+        .modal-body { padding: 30px; overflow-y: auto; }
+        .report-summary { background: var(--surface-accent); padding: 20px; border-radius: 16px; border-left: 4px solid var(--accent-blue); white-space: pre-wrap; line-height: 1.6; font-size: 15px; }
+
+        .view-container { display: none; height: 100%; flex-direction: column; min-height: 0; }
+        .view-container.active { display: flex; }
+
+        @media print {
+            .modal-overlay { display: block !important; position: static; background: white; backdrop-filter: none; }
+            .modal-content { border: none; width: 100%; max-width: none; background: white; color: black; }
+            .modal-header button, .nav-tabs, header, .pipeline, .dashboard-grid, .modal-header span:last-child { display: none !important; }
+            .modal-body { padding: 0; }
+            .report-summary { border: 1px solid #ddd; background: #f9f9f9; color: black; }
+            .stat-card .value, .brand-name { color: black !important; }
+        }
+
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="brand">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+            <div class="brand-name">FRAUD GUARD</div>
+        </div>
+        <nav class="nav-tabs">
+            <button class="tab-btn active" onclick="switchTab('dashboard', this)">DASHBOARD</button>
+            <button class="tab-btn" onclick="switchTab('explorer', this)">THREAT LOGS</button>
+        </nav>
+        <div class="system-status">
+            <div class="pulse-dot"></div>
+            LIVE OPERATIONS
+        </div>
+    </header>
+
+    <main>
+        <!-- View: Dashboard -->
+        <div id="view-dashboard" class="view-container active">
+            <div class="pipeline">
+                <div class="node" id="node-producer" data-label="INGESTION"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 11a9 9 0 0 1 9 9"></path><path d="M4 4a16 16 0 0 1 16 16"></path><circle cx="5" cy="19" r="1"></circle></svg></div>
+                <div class="node" id="node-kafka" data-label="KAFKA"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 18 10"></polyline><polyline points="1 20 1 14 6 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg></div>
+                <div class="node" id="node-spark" data-label="SPARK"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg></div>
+                <div class="node" id="node-agent" data-label="AGENT"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg></div>
+            </div>
+            <div class="dashboard-grid">
+                <div class="col col-left">
+                    <div class="card card-no-grow">
+                        <div class="card-header"><span class="card-title">Real-time Metrics</span></div>
+                        <div class="card-body">
+                            <div class="stat-card stat-total"><span class="label">Processed</span><span class="value" id="stat-total">0</span></div>
+                            <div class="stat-card stat-blocked"><span class="label">Blocked</span><span class="value" id="stat-blocked">0</span></div>
+                            <div class="stat-card stat-cleared"><span class="label">Cleared</span><span class="value" id="stat-cleared">0</span></div>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="card-header"><span class="card-title">Orchestrator</span></div>
+                        <div class="card-body"><div class="service-list" id="services-list"></div></div>
+                    </div>
+                </div>
+                <div class="col col-center">
+                    <div class="card">
+                        <div class="card-header"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 17 10 11 4 5"></polyline><line x1="12" y1="19" x2="20" y2="19"></line></svg><span class="card-title">Transaction Firehose</span></div>
+                        <div class="terminal" id="terminal-stream"></div>
+                    </div>
+                </div>
+                <div class="col col-right">
+                    <div class="card">
+                        <div class="card-header"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg><span class="card-title">Investigation Feed</span></div>
+                        <div class="card-body"><div class="feed" id="investigation-feed"><div style="text-align: center; color: var(--text-muted); padding: 40px; font-size: 11px;">Awaiting anomalies...</div></div></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- View: Logs -->
+        <div id="view-explorer" class="view-container">
+            <div class="card" style="margin: 0;">
+                <div class="card-header">
+                    <div class="nav-tabs">
+                        <button class="tab-btn active" onclick="applyFilter('ALL', this)">ALL REPORTS</button>
+                        <button class="tab-btn" onclick="applyFilter('BLOCKED', this)">BLOCKED</button>
+                        <button class="tab-btn" onclick="applyFilter('NOTIFIED', this)">NOTIFIED</button>
+                        <button class="tab-btn" onclick="applyFilter('CLEARED', this)">CLEARED</button>
+                    </div>
+                </div>
+                <div class="table-wrapper">
+                    <table>
+                        <thead><tr><th>Time</th><th>Account</th><th>Amount</th><th>Status</th><th>Action</th></tr></thead>
+                        <tbody id="db-table-body"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Modal -->
+    <div class="modal-overlay" id="inv-modal" onclick="closeModal(event)">
+        <div class="modal-content">
+            <div class="modal-header">
+                <span id="modal-account" style="font-size: 20px; font-weight: 800;">-</span>
+                <div style="display: flex; gap: 10px;">
+                    <button style="background: var(--surface-accent); border: 1px solid var(--border); color: #fff; padding: 6px 12px; border-radius: 8px; cursor: pointer; font-size: 11px; font-weight: 700;" onclick="window.print()">EXPORT PDF</button>
+                    <button style="background: none; border: none; color: #fff; cursor: pointer; font-size: 18px;" onclick="closeModal()">✕</button>
+                </div>
+            </div>
+            <div class="modal-body">
+                <div style="display: flex; gap: 30px; margin-bottom: 20px;">
+                    <div><label style="display: block; font-size: 9px; color: var(--text-muted); font-weight: 700;">AMOUNT</label><span id="modal-amount" style="font-size: 18px; font-weight: 800; color: var(--accent-blue);">-</span></div>
+                    <div><label style="display: block; font-size: 9px; color: var(--text-muted); font-weight: 700;">TIME</label><span id="modal-time" style="font-size: 18px; font-weight: 800;">-</span></div>
+                </div>
+                <div class="report-summary" id="modal-summary"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = (window.location.protocol === 'file:') ? 'http://localhost:8000' : '';
+        let lastTxnIds = new Set();
+        let lastInvIds = new Set();
+        let investigationsData = {};
+        let allInvestigationsArray = [];
+        let currentFilter = 'ALL';
+
+        function switchTab(tabId, btn) {
+            document.querySelectorAll('header .tab-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            document.querySelectorAll('.view-container').forEach(v => v.classList.remove('active'));
+            document.getElementById(`view-${tabId}`).classList.add('active');
+        }
+
+        function applyFilter(filter, btn) {
+            currentFilter = filter;
+            document.querySelectorAll('#view-explorer .tab-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            renderDatabaseTable();
+        }
+
+        function renderDatabaseTable() {
+            const tbody = document.getElementById('db-table-body');
+            tbody.innerHTML = '';
+            let filtered = allInvestigationsArray;
+            if (currentFilter !== 'ALL') filtered = allInvestigationsArray.filter(i => i.status === currentFilter);
+            filtered.forEach(inv => {
+                const uid = `${inv.timestamp}-${inv.account_id}`;
+                const tr = document.createElement('tr');
+                tr.innerHTML = `<td>${inv.timestamp}</td><td style="font-weight:700">${inv.account_id}</td><td style="color:var(--accent-blue)">$${inv.amount.toLocaleString()}</td><td><span class="status-pill pill-${inv.status.toLowerCase()}">${inv.status}</span></td><td><span class="action-link" onclick="openModal('${uid}')">DETAILS</span></td>`;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function openModal(uid) {
+            const data = investigationsData[uid];
+            if (!data) return;
+            document.getElementById('modal-account').innerText = data.account_id;
+            document.getElementById('modal-amount').innerText = '$' + data.amount.toLocaleString();
+            document.getElementById('modal-time').innerText = data.timestamp;
+            document.getElementById('modal-summary').innerText = data.summary;
+            document.getElementById('inv-modal').style.display = 'flex';
+        }
+        function closeModal(e) {
+            if (e && e.target.className !== 'modal-overlay' && e.target.tagName !== 'BUTTON') return;
+            document.getElementById('inv-modal').style.display = 'none';
+        }
+
+        function triggerNode(id, isFraud=false) {
+            const el = document.getElementById(id);
+            if (!el) return;
+            el.classList.add(isFraud ? 'active-fraud' : 'active');
+            setTimeout(() => el.classList.remove('active', 'active-fraud'), 800);
+        }
+
+        async function fetchSystemState() {
+            try {
+                const [statusRes, telRes] = await Promise.all([ fetch(`${API_BASE}/status`), fetch(`${API_BASE}/telemetry`) ]);
+                const statusData = await statusRes.json();
+                const telData = await telRes.json();
+                renderServices(statusData);
+                document.getElementById('stat-total').innerText = telData.stats.total_txns.toLocaleString();
+                document.getElementById('stat-blocked').innerText = telData.stats.fraud_blocked.toLocaleString();
+                document.getElementById('stat-cleared').innerText = telData.stats.fraud_cleared.toLocaleString();
+                if (telData.raw_txns) processRawTxns(telData.raw_txns.reverse());
+                if (telData.investigations) processInvestigations(telData.investigations);
+            } catch (err) { }
+        }
+
+        function renderServices(data) {
+            const list = document.getElementById('services-list');
+            list.innerHTML = '';
+            Object.keys(data).forEach(name => {
+                const isRunning = data[name] === 'Running';
+                list.innerHTML += `<div class="service-item"><div class="service-info"><span class="service-name">${name}</span><span class="service-status ${isRunning?'status-running':'status-stopped'}">${data[name]}</span></div><button class="control-btn" onclick="toggleService('${name}', '${data[name]}')">${isRunning?'STOP':'START'}</button></div>`;
+            });
+        }
+
+        async function toggleService(name, currentStatus) {
+            const btn = event.target;
+            btn.innerText = 'WAIT...';
+            const action = currentStatus === 'Running' ? 'stop' : 'start';
+            await fetch(`${API_BASE}/control/${action}/${name}`, {method: 'POST'});
+        }
+
+        function processRawTxns(txns) {
+            const terminal = document.getElementById('terminal-stream');
+            txns.forEach(txn => {
+                const uid = `${txn.step}-${txn.nameOrig}`;
+                if (!lastTxnIds.has(uid)) {
+                    lastTxnIds.add(uid);
+                    const isFraud = txn.isFraud === 1;
+                    const div = document.createElement('div');
+                    div.className = 'log-entry';
+                    div.innerHTML = `<span class="log-time">${txn._time}</span><span class="tag ${isFraud?'tag-fraud':'tag-good'}">${isFraud?'FRAUD':'NORMAL'}</span><span>ID: ${txn.nameOrig} | $${txn.amount.toLocaleString()}</span>`;
+                    terminal.prepend(div);
+                    if (terminal.children.length > 30) terminal.removeChild(terminal.lastChild);
+                    triggerNode('node-producer', isFraud);
+                }
+            });
+        }
+
+        function processInvestigations(invs) {
+            const feed = document.getElementById('investigation-feed');
+            allInvestigationsArray = invs;
+            if (feed.innerText.includes("Awaiting") && invs.length > 0) feed.innerHTML = '';
+            [...invs].reverse().forEach(inv => {
+                const uid = `${inv.timestamp}-${inv.account_id}`;
+                if (!lastInvIds.has(uid)) {
+                    lastInvIds.add(uid);
+                    investigationsData[uid] = inv;
+                    triggerNode('node-agent', inv.status === 'BLOCKED');
+                    const el = document.createElement('div');
+                    el.className = 'inv-card';
+                    el.onclick = () => openModal(uid);
+                    el.innerHTML = `<div class="inv-info"><span class="inv-acc">${inv.account_id}</span><span class="inv-meta">$${inv.amount.toLocaleString()} • ${inv.timestamp}</span></div><span class="status-pill pill-${inv.status.toLowerCase()}">${inv.status}</span>`;
+                    feed.prepend(el);
+                    if (feed.children.length > 15) feed.removeChild(feed.lastChild);
+                }
+            });
+        }
+
+        setInterval(fetchSystemState, 1000);
+        fetchSystemState();
+    </script>
+</body>
+</html>
